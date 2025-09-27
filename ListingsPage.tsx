@@ -18,6 +18,11 @@ export const ListingsPage = ({ onSelectApplication, onSelectChecklist, onSelectL
                         <p>A fully digital, interactive form with auto-save, document uploads, and one-click PDF creation. Streamline the application process for everyone.</p>
                         <button className="btn btn-primary" onClick={onSelectApplication}>Start Application</button>
                     </div>
+                     <div className="listing-card">
+                        <h2>AI Screening Score & Report</h2>
+                        <p>Leverage AI to analyze financial documents directly within the application. Get a clear, unbiased summary and risk score to make confident decisions.</p>
+                        <button className="btn btn-secondary" onClick={onSelectApplication}>Start Application</button>
+                    </div>
                     <div className="listing-card">
                         <h2>Move-In/Move-Out Checklist</h2>
                         <p>Protect your investment. Document property condition with our AI-powered checklist, generating an undisputed record with photos and itemized lists.</p>

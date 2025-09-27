@@ -71,11 +71,16 @@ export const App = () => {
 
 
   const renderView = () => {
+    const commonProps = {
+        onSelectApplication: () => setCurrentView('application'),
+        onSelectChecklist: () => setCurrentView('checklist'),
+        onSelectLease: () => setCurrentView('lease'),
+    };
     switch (currentView) {
       case 'home':
-        return <HomePage onSelectApplication={() => setCurrentView('application')} onSelectChecklist={() => setCurrentView('checklist')} onSelectLease={() => setCurrentView('lease')} />;
+        return <HomePage {...commonProps} />;
       case 'listings':
-        return <ListingsPage onSelectApplication={() => setCurrentView('application')} onSelectChecklist={() => setCurrentView('checklist')} onSelectLease={() => setCurrentView('lease')} />;
+        return <ListingsPage {...commonProps} />;
       case 'application':
         return <ApplicationForm initialReferenceId={initialReferenceId} />;
       case 'checklist':
@@ -85,7 +90,7 @@ export const App = () => {
       case 'shareLinks':
         return <ShareLinksPage />;
       default:
-        return <HomePage onSelectApplication={() => setCurrentView('application')} onSelectChecklist={() => setCurrentView('checklist')} onSelectLease={() => setCurrentView('lease')} />;
+        return <HomePage {...commonProps} />;
     }
   };
 

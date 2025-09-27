@@ -39,8 +39,8 @@ export const HomePage = ({ onSelectApplication, onSelectChecklist, onSelectLease
                         <div className="feature-icon">
                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8V4H8"/><rect x="4" y="12" width="16" height="8" rx="2"/><path d="M4 14H2"/><path d="M20 14H22"/><path d="M15 12V8a3 3 0 0 0-3-3H9a3 3 0 0 0-3 3v4"/></svg>
                         </div>
-                        <h3>AI-Powered Document Verification</h3>
-                        <p>Our intelligent system reviews every uploaded document for accuracy and authenticity. Unverified or suspicious files are automatically flagged and rejected.</p>
+                        <h3>AI-Powered Screening Report</h3>
+                        <p>Automatically generate a comprehensive screening report with a risk score, financial summary, and red flag analysis by leveraging AI to analyze uploaded documents.</p>
                     </div>
                      <div className="feature-item">
                         <div className="feature-icon">
@@ -91,6 +91,11 @@ export const HomePage = ({ onSelectApplication, onSelectChecklist, onSelectLease
                         <h2>Move-In/Move-Out Checklist</h2>
                         <p>Protect your investment and prevent disputes. Our AI-powered checklist allows you to document the property's condition with photos and automatically generate an itemized list, creating a clear, undisputed record.</p>
                         <button className="btn btn-secondary" onClick={onSelectChecklist}>Create Checklist</button>
+                    </div>
+                    <div className="listing-card">
+                        <h2>AI Screening Score & Report</h2>
+                        <p>Go beyond basic checks. Our application form integrates AI to analyze financial documents and generate an instant screening score, giving you a clear, unbiased summary of applicant risk.</p>
+                        <button className="btn btn-secondary" onClick={onSelectApplication}>Start an Application</button>
                     </div>
                     <div className="listing-card">
                         <h2>Customizable Lease Agreement</h2>

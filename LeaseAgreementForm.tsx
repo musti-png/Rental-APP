@@ -343,19 +343,21 @@ export const LeaseAgreementForm = () => {
                     <p>Select the clauses to include in the lease agreement.</p>
                     <div className="clauses-list">
                         {Object.entries(leaseData.clauses).map(([key, clause]) => {
+                            // Fix: Add type assertion to correctly access properties on the `clause` object.
+                            const typedClause = clause as { included: boolean; text: string; };
                             const isRequired = (STATE_REQUIRED_CLAUSES[leaseData.property.state] || []).includes(key);
                             return (
                                 <div key={key} className="clause-item">
                                     <div className="checkbox-group">
-                                        <input type="checkbox" id={`clause-${key}`} checked={clause.included} onChange={e => !isRequired && handleClauseChange(key, 'included', e.target.checked)} disabled={isRequired} />
+                                        <input type="checkbox" id={`clause-${key}`} checked={typedClause.included} onChange={e => !isRequired && handleClauseChange(key, 'included', e.target.checked)} disabled={isRequired} />
                                         <label htmlFor={`clause-${key}`} style={{textTransform: 'capitalize'}}>
                                             {key}
                                             {isRequired && <span className="mandatory-indicator">(Mandatory for {leaseData.property.state})</span>}
                                         </label>
                                     </div>
-                                    {clause.included && (
+                                    {typedClause.included && (
                                         <div className="form-group">
-                                            <textarea value={clause.text} onChange={e => handleClauseChange(key, 'text', e.target.value)} rows={4} />
+                                            <textarea value={typedClause.text} onChange={e => handleClauseChange(key, 'text', e.target.value)} rows={4} />
                                         </div>
                                     )}
                                 </div>

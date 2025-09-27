@@ -4,27 +4,10 @@
 */
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { TABS, FORM_KEYS, VALIDATION_RULES, FORM_SECTIONS, landlordConfigs, defaultConfig, blankFormData } from './constants';
-import { FormInput, FileUploadField, CompletionProgress } from './utils';
+import { FormInput, DocumentUploadField, CompletionProgress } from './utils';
 import { PdfButtonsPanel } from './pdfUtils';
-import { run } from 'node:test';
+import { ScreeningReport } from './ScreeningReport';
 
-// --- CUSTOM HOOKS & DYNAMIC ITEM HANDLERS ---
-
-const useAutoSave = (data, key) => {
-  useEffect(() => {
-    if (key && key.trim() !== '') {
-      const timerId = setTimeout(() => {
-        try {
-          localStorage.setItem(key, JSON.stringify(data));
-        } catch (error) {
-          console.error('Failed to save application data to localStorage:', error);
-        }
-      }, 500); // Debounce to reduce frequency of writes
-
-      return () => clearTimeout(timerId);
-    }
-  }, [data, key]);
-};
 
 const useDynamicList = (formData, setFormData, listKey, itemTemplate) => {
   const list = formData[listKey];
@@ -48,7 +31,7 @@ const useDynamicList = (formData, setFormData, listKey, itemTemplate) => {
 
 
 // --- FORM NAVIGATION ---
-const FormNavigation = ({ activeTab, setActiveTab, totalTabs, activeSectionId, sectionIds, isSubmittable, incompleteSections }) => {
+const FormNavigation = ({ activeTab, setActiveTab, totalTabs, formData, propertyName, isSubmittable, incompleteSections }) => {
     const handleNext = () => {
         if (activeTab < totalTabs - 1) {
             setActiveTab(activeTab + 1);
@@ -64,8 +47,8 @@ const FormNavigation = ({ activeTab, setActiveTab, totalTabs, activeSectionId, s
     return (
         <div className="form-actions-container">
             <PdfButtonsPanel
-                activeSectionId={activeSectionId}
-                sectionIds={sectionIds}
+                formData={formData}
+                propertyName={propertyName}
                 isSubmittable={isSubmittable}
                 incompleteSections={incompleteSections}
             />
@@ -133,6 +116,16 @@ const PersonalInfoForm = ({ data, setData, onReferenceIdChange, isReadOnly }) =>
     };
     reader.readAsDataURL(file);
   };
+
+  const handleIdDocsUpdate = (field, newFiles) => {
+    setData(prev => ({
+        ...prev,
+        personalInfo: {
+            ...prev.personalInfo,
+            [field]: newFiles,
+        },
+    }));
+  };
   
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { id: field, value } = e.target;
@@ -159,7 +152,7 @@ const PersonalInfoForm = ({ data, setData, onReferenceIdChange, isReadOnly }) =>
   };
 
   return (
-    <div className="form-section" id="personal-info-section" data-pdf-section="personal-info-section">
+    <div className="form-section" id="personal-info-section">
       <h2 className="form-section-title">Personal Information</h2>
       <p>Please provide your full legal and contact information.</p>
 
@@ -239,6 +232,25 @@ const PersonalInfoForm = ({ data, setData, onReferenceIdChange, isReadOnly }) =>
           required
         />
       </div>
+
+       <div className="form-subsection">
+          <h3>Identification Documents</h3>
+          <p>Please upload clear images of the front and back of your government-issued ID (e.g., Driver's License, State ID).</p>
+          <div className="document-upload-list">
+              <DocumentUploadField
+                  id="idFront"
+                  label="ID Front"
+                  files={data.idFront}
+                  onFilesUpdate={(files) => handleIdDocsUpdate('idFront', files)}
+              />
+              <DocumentUploadField
+                  id="idBack"
+                  label="ID Back"
+                  files={data.idBack}
+                  onFilesUpdate={(files) => handleIdDocsUpdate('idBack', files)}
+              />
+          </div>
+      </div>
     </div>
   );
 };
@@ -250,7 +262,7 @@ const RentalHistoryForm = ({ formData, setFormData }) => {
   );
 
   return (
-    <div className="form-section" id="rental-history-section" data-pdf-section="rental-history-section">
+    <div className="form-section" id="rental-history-section">
       <h2 className="form-section-title">Rental History Verification</h2>
       <p>Please list your previous addresses for the past 2-3 years. We will contact your previous landlords to verify your rental history.</p>
       {list.map((res, index) => (
@@ -328,37 +340,18 @@ const EmploymentVerificationForm = ({ data, setData }) => {
             }
         }));
     };
-    
-    const handleFileChange = (field: string, e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
 
-        const reader = new FileReader();
-        reader.onload = () => {
-            setData(prev => {
-                const newEmploymentVerification = { ...prev.employmentVerification };
-                if (!newEmploymentVerification.incomeDocuments) {
-                    newEmploymentVerification.incomeDocuments = {};
-                }
-                newEmploymentVerification.incomeDocuments[field] = {
-                    name: file.name,
-                    data: reader.result as string, // base64 string
-                };
-                return { ...prev, employmentVerification: newEmploymentVerification };
-            });
-        };
-        reader.readAsDataURL(file);
-        e.target.value = ''; // Allow re-uploading the same file
-    };
-
-    const handleFileRemove = (field: string) => {
-        setData(prev => {
-            const newEmploymentVerification = { ...prev.employmentVerification };
-            if (newEmploymentVerification.incomeDocuments) {
-                newEmploymentVerification.incomeDocuments[field] = null;
-            }
-            return { ...prev, employmentVerification: newEmploymentVerification };
-        });
+    const handleIncomeDocsUpdate = (field, newFiles) => {
+        setData(prev => ({
+            ...prev,
+            employmentVerification: {
+                ...prev.employmentVerification,
+                incomeDocuments: {
+                    ...prev.employmentVerification.incomeDocuments,
+                    [field]: newFiles,
+                },
+            },
+        }));
     };
 
     const totalIncome =
@@ -409,7 +402,7 @@ const EmploymentVerificationForm = ({ data, setData }) => {
     };
 
     return (
-        <div className="form-section" id="employment-verification-section" data-pdf-section="employment-verification-section">
+        <div className="form-section" id="employment-verification-section">
             <h2 className="form-section-title">Employment and Income Verification</h2>
             <p>Please provide your current employment and income details. This information will be used to verify your ability to pay rent.</p>
             
@@ -481,33 +474,36 @@ const EmploymentVerificationForm = ({ data, setData }) => {
                 <h3>Proof of Income Documents</h3>
                 <p>Please upload the following documents. These are required for your application to be processed.</p>
                 <div className="document-upload-list">
-                    <FileUploadField 
-                        id="payStubs" 
-                        label="Recent Pay Stubs (last 2)"
-                        file={data.incomeDocuments?.payStubs}
-                        onUpload={(e) => handleFileChange('payStubs', e)}
-                        onRemove={() => handleFileRemove('payStubs')}
+                    <DocumentUploadField
+                        id="paySlips"
+                        label="Last 2 Pay Slips"
+                        files={data.incomeDocuments?.paySlips}
+                        onFilesUpdate={(files) => handleIncomeDocsUpdate('paySlips', files)}
+                        multiple
                     />
-                    <FileUploadField 
-                        id="offerLetter" 
-                        label="Offer Letter (if new job)"
-                        file={data.incomeDocuments?.offerLetter}
-                        onUpload={(e) => handleFileChange('offerLetter', e)}
-                        onRemove={() => handleFileRemove('offerLetter')}
+                    <DocumentUploadField
+                        id="bankStatements6Month"
+                        label="6-Month Bank Statements"
+                        files={data.incomeDocuments?.bankStatements6Month}
+                        onFilesUpdate={(files) => handleIncomeDocsUpdate('bankStatements6Month', files)}
                     />
-                    <FileUploadField 
-                        id="taxReturn" 
-                        label="Most Recent Tax Return"
-                        file={data.incomeDocuments?.taxReturn}
-                        onUpload={(e) => handleFileChange('taxReturn', e)}
-                        onRemove={() => handleFileRemove('taxReturn')}
+                    <DocumentUploadField
+                        id="bankStatementsLastYear"
+                        label="Last Year Bank Statements"
+                        files={data.incomeDocuments?.bankStatementsLastYear}
+                        onFilesUpdate={(files) => handleIncomeDocsUpdate('bankStatementsLastYear', files)}
                     />
-                    <FileUploadField 
-                        id="bankStatements" 
-                        label="Bank Statements (last 2 months)"
-                        file={data.incomeDocuments?.bankStatements}
-                        onUpload={(e) => handleFileChange('bankStatements', e)}
-                        onRemove={() => handleFileRemove('bankStatements')}
+                    <DocumentUploadField
+                        id="creditCardStatements3Month"
+                        label="Last 3-Month Credit Card Statements"
+                        files={data.incomeDocuments?.creditCardStatements3Month}
+                        onFilesUpdate={(files) => handleIncomeDocsUpdate('creditCardStatements3Month', files)}
+                    />
+                    <DocumentUploadField
+                        id="creditCardStatements6Month"
+                        label="Last 6-Month Credit Card Statements"
+                        files={data.incomeDocuments?.creditCardStatements6Month}
+                        onFilesUpdate={(files) => handleIncomeDocsUpdate('creditCardStatements6Month', files)}
                     />
                 </div>
             </div>
@@ -542,7 +538,7 @@ const HouseholdForm = ({ data, setData }) => {
   };
 
   const addOccupant = () => {
-    setData(prev => ({ ...prev, householdOccupants: [...(prev.householdOccupants || []), { firstName: '', lastName: '', relationship: '', dob: '', photo: null }] }));
+    setData(prev => ({ ...prev, householdOccupants: [...(prev.householdOccupants || []), { firstName: '', lastName: '', relationship: '', dob: '', photo: null, idFront: [], idBack: [] }] }));
   };
 
   const removeOccupant = (index: number) => {
@@ -560,9 +556,15 @@ const HouseholdForm = ({ data, setData }) => {
     };
     reader.readAsDataURL(file);
   };
+
+  const handleOccupantIdDocsUpdate = (index: number, field: string, files: any[]) => {
+    const newList = [...occupants];
+    newList[index] = { ...newList[index], [field]: files };
+    setData(prev => ({ ...prev, householdOccupants: newList }));
+  };
   
   return (
-    <div className="form-section" id="household-info-section" data-pdf-section="household-info-section">
+    <div className="form-section" id="household-info-section">
       <h2 className="form-section-title">Household Information</h2>
       <p>List all other individuals who will be occupying the rental unit, including children.</p>
       {occupants.map((occ, index) => (
@@ -616,6 +618,20 @@ const HouseholdForm = ({ data, setData }) => {
             </div>
             <FormInput id={`occDob${index}`} label="Date of Birth" type="date" value={occ.dob} onChange={e => handleOccupantChange(index, 'dob', e.target.value)} />
           </div>
+          <div className="document-upload-list" style={{ marginTop: '1rem' }}>
+              <DocumentUploadField
+                  id={`occupantIdFront${index}`}
+                  label="ID Front"
+                  files={occ.idFront}
+                  onFilesUpdate={(files) => handleOccupantIdDocsUpdate(index, 'idFront', files)}
+              />
+              <DocumentUploadField
+                  id={`occupantIdBack${index}`}
+                  label="ID Back"
+                  files={occ.idBack}
+                  onFilesUpdate={(files) => handleOccupantIdDocsUpdate(index, 'idBack', files)}
+              />
+          </div>
         </div>
       ))}
       <button type="button" onClick={addOccupant} className="btn btn-secondary">Add Another Occupant</button>
@@ -630,7 +646,7 @@ const ReferencesForm = ({ formData, setFormData }) => {
   );
 
   return (
-    <div className="form-section" id="references-section" data-pdf-section="references-section">
+    <div className="form-section" id="references-section">
       <h2 className="form-section-title">References</h2>
       <p>Please provide at least two personal or professional references who are not related to you.</p>
       {list.map((ref, index) => (
@@ -745,7 +761,7 @@ const VehiclesPetsForm = ({ data, setData }) => {
   };
 
   return (
-    <div className="form-section" id="vehicles-pets-section" data-pdf-section="vehicles-pets-section">
+    <div className="form-section" id="vehicles-pets-section">
       <div className="form-subsection">
         <h2 className="form-section-title">Vehicles</h2>
         <div className="form-group">
@@ -811,35 +827,18 @@ const VehiclesPetsForm = ({ data, setData }) => {
 };
 
 const CreditHistoryForm = ({ data, setData }) => {
-    const handleFileChange = (field: string, e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = () => {
-            setData(prev => {
-                const newCreditHistory = { ...prev.creditHistory };
-                newCreditHistory[field] = {
-                    name: file.name,
-                    data: reader.result as string, // base64 string
-                };
-                return { ...prev, creditHistory: newCreditHistory };
-            });
-        };
-        reader.readAsDataURL(file);
-        e.target.value = ''; // Allow re-uploading the same file
-    };
-
-    const handleFileRemove = (field: string) => {
-        setData(prev => {
-            const newCreditHistory = { ...prev.creditHistory };
-            newCreditHistory[field] = null;
-            return { ...prev, creditHistory: newCreditHistory };
-        });
+    const handleFilesUpdate = (field, newFiles) => {
+        setData(prev => ({
+            ...prev,
+            creditHistory: {
+                ...prev.creditHistory,
+                [field]: newFiles,
+            },
+        }));
     };
 
     return (
-        <div className="form-section" id="credit-history-section" data-pdf-section="credit-history-section">
+        <div className="form-section" id="credit-history-section">
             <h2 className="form-section-title">Credit History & Reports</h2>
             <p>As part of the application process, we require a recent credit report, including your credit score and payment history, from each of the three major credit bureaus. Please obtain and upload your reports from the following services:</p>
             <ul className="info-list">
@@ -850,26 +849,23 @@ const CreditHistoryForm = ({ data, setData }) => {
             <p className="field-hint" style={{textAlign: 'left', marginTop: 0}}>While you can request a free annual report, these often do not include your credit score. Please use the paid services listed to obtain a complete report. Upload each report in the designated section below.</p>
 
             <div className="document-upload-list">
-                <FileUploadField
+                <DocumentUploadField
                     id="transunionReport"
                     label="TransUnion SmartMove Report"
-                    file={data.transunionReport}
-                    onUpload={(e) => handleFileChange('transunionReport', e)}
-                    onRemove={() => handleFileRemove('transunionReport')}
+                    files={data.transunionReport}
+                    onFilesUpdate={(files) => handleFilesUpdate('transunionReport', files)}
                 />
-                <FileUploadField
+                <DocumentUploadField
                     id="experianReport"
                     label="Experian Connect Report"
-                    file={data.experianReport}
-                    onUpload={(e) => handleFileChange('experianReport', e)}
-                    onRemove={() => handleFileRemove('experianReport')}
+                    files={data.experianReport}
+                    onFilesUpdate={(files) => handleFilesUpdate('experianReport', files)}
                 />
-                <FileUploadField
+                <DocumentUploadField
                     id="equifaxReport"
                     label="Equifax Credit Report"
-                    file={data.equifaxReport}
-                    onUpload={(e) => handleFileChange('equifaxReport', e)}
-                    onRemove={() => handleFileRemove('equifaxReport')}
+                    files={data.equifaxReport}
+                    onFilesUpdate={(files) => handleFilesUpdate('equifaxReport', files)}
                 />
             </div>
         </div>
@@ -877,32 +873,15 @@ const CreditHistoryForm = ({ data, setData }) => {
 };
 
 const CriminalHistoryForm = ({ data, setData }) => {
-  const handleFileChange = (field: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-        setData(prev => {
-            const newCriminalHistory = { ...prev.criminalHistory };
-            newCriminalHistory[field] = {
-                name: file.name,
-                data: reader.result as string, // base64 string
-            };
-            return { ...prev, criminalHistory: newCriminalHistory };
-        });
+    const handleFilesUpdate = (field, newFiles) => {
+        setData(prev => ({
+            ...prev,
+            criminalHistory: {
+                ...prev.criminalHistory,
+                [field]: newFiles,
+            },
+        }));
     };
-    reader.readAsDataURL(file);
-    e.target.value = ''; // Allow re-uploading the same file
-  };
-
-  const handleFileRemove = (field: string) => {
-      setData(prev => {
-          const newCriminalHistory = { ...prev.criminalHistory };
-          newCriminalHistory[field] = null;
-          return { ...prev, criminalHistory: newCriminalHistory };
-      });
-  };
   
   const handleConsentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { checked } = e.target;
@@ -913,7 +892,7 @@ const CriminalHistoryForm = ({ data, setData }) => {
   };
 
   return (
-    <div className="form-section" id="criminal-history-section" data-pdf-section="criminal-history-section">
+    <div className="form-section" id="criminal-history-section">
       <h2 className="form-section-title">Criminal History Verification</h2>
       <p>Please obtain and upload your criminal history report from each of the following services. A comprehensive background check is a required step in our screening process.</p>
       <ul className="info-list">
@@ -925,34 +904,30 @@ const CriminalHistoryForm = ({ data, setData }) => {
       <p className="field-hint" style={{textAlign: 'left', marginTop: 0}}>Upload the requested documents to the relevant institution's upload section below.</p>
 
       <div className="document-upload-list">
-          <FileUploadField
+            <DocumentUploadField
               id="transunionCriminalReport"
               label="TransUnion SmartMove Report"
-              file={data.transunionReport}
-              onUpload={(e) => handleFileChange('transunionReport', e)}
-              onRemove={() => handleFileRemove('transunionReport')}
-          />
-          <FileUploadField
-              id="experianCriminalReport"
-              label="Experian Connect Report"
-              file={data.experianReport}
-              onUpload={(e) => handleFileChange('experianReport', e)}
-              onRemove={() => handleFileRemove('experianReport')}
-          />
-          <FileUploadField
-              id="availCriminalReport"
-              label="Avail Criminal History Report"
-              file={data.availReport}
-              onUpload={(e) => handleFileChange('availReport', e)}
-              onRemove={() => handleFileRemove('availReport')}
-          />
-          <FileUploadField
-              id="myRentalCriminalReport"
-              label="MyRental Criminal History Report"
-              file={data.myRentalReport}
-              onUpload={(e) => handleFileChange('myRentalReport', e)}
-              onRemove={() => handleFileRemove('myRentalReport')}
-          />
+              files={data.transunionReport}
+              onFilesUpdate={(files) => handleFilesUpdate('transunionReport', files)}
+            />
+            <DocumentUploadField
+                id="experianCriminalReport"
+                label="Experian Connect Report"
+                files={data.experianReport}
+                onFilesUpdate={(files) => handleFilesUpdate('experianReport', files)}
+            />
+            <DocumentUploadField
+                id="availCriminalReport"
+                label="Avail Criminal History Report"
+                files={data.availReport}
+                onFilesUpdate={(files) => handleFilesUpdate('availReport', files)}
+            />
+            <DocumentUploadField
+                id="myRentalCriminalReport"
+                label="MyRental Criminal History Report"
+                files={data.myRentalReport}
+                onFilesUpdate={(files) => handleFilesUpdate('myRentalReport', files)}
+            />
       </div>
       
       <div className="form-subsection">
@@ -975,31 +950,14 @@ const CriminalHistoryForm = ({ data, setData }) => {
 };
 
 const EvictionHistoryForm = ({ data, setData }) => {
-    const handleFileChange = (field: string, e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = () => {
-            setData(prev => {
-                const newEvictionHistory = { ...prev.evictionHistory };
-                newEvictionHistory[field] = {
-                    name: file.name,
-                    data: reader.result as string, // base64 string
-                };
-                return { ...prev, evictionHistory: newEvictionHistory };
-            });
-        };
-        reader.readAsDataURL(file);
-        e.target.value = ''; // Allow re-uploading the same file
-    };
-
-    const handleFileRemove = (field: string) => {
-        setData(prev => {
-            const newEvictionHistory = { ...prev.evictionHistory };
-            newEvictionHistory[field] = null;
-            return { ...prev, evictionHistory: newEvictionHistory };
-        });
+    const handleFilesUpdate = (field, newFiles) => {
+        setData(prev => ({
+            ...prev,
+            evictionHistory: {
+                ...prev.evictionHistory,
+                [field]: newFiles,
+            },
+        }));
     };
 
     const handleConsentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1011,7 +969,7 @@ const EvictionHistoryForm = ({ data, setData }) => {
     };
 
     return (
-        <div className="form-section" id="eviction-history-section" data-pdf-section="eviction-history-section">
+        <div className="form-section" id="eviction-history-section">
             <h2 className="form-section-title">Eviction History</h2>
             <p>A review of eviction history is a standard part of our application process. Please obtain and upload your eviction history report from each of the following tenant screening services.</p>
             <ul className="info-list">
@@ -1021,33 +979,29 @@ const EvictionHistoryForm = ({ data, setData }) => {
                 <li><strong>MyRental</strong></li>
             </ul>
             <div className="document-upload-list">
-                <FileUploadField
+                <DocumentUploadField
                     id="transunionEvictionReport"
                     label="TransUnion SmartMove Eviction Report"
-                    file={data.transunionEvictionReport}
-                    onUpload={(e) => handleFileChange('transunionEvictionReport', e)}
-                    onRemove={() => handleFileRemove('transunionEvictionReport')}
+                    files={data.transunionEvictionReport}
+                    onFilesUpdate={(files) => handleFilesUpdate('transunionEvictionReport', files)}
                 />
-                <FileUploadField
+                <DocumentUploadField
                     id="experianEvictionReport"
                     label="Experian Connect Eviction Report"
-                    file={data.experianEvictionReport}
-                    onUpload={(e) => handleFileChange('experianEvictionReport', e)}
-                    onRemove={() => handleFileRemove('experianEvictionReport')}
+                    files={data.experianEvictionReport}
+                    onFilesUpdate={(files) => handleFilesUpdate('experianEvictionReport', files)}
                 />
-                <FileUploadField
+                <DocumentUploadField
                     id="availEvictionReport"
                     label="Avail Eviction History Report"
-                    file={data.availEvictionReport}
-                    onUpload={(e) => handleFileChange('availEvictionReport', e)}
-                    onRemove={() => handleFileRemove('availEvictionReport')}
+                    files={data.availEvictionReport}
+                    onFilesUpdate={(files) => handleFilesUpdate('availEvictionReport', files)}
                 />
-                <FileUploadField
+                <DocumentUploadField
                     id="myRentalEvictionReport"
                     label="MyRental Eviction History Report"
-                    file={data.myRentalEvictionReport}
-                    onUpload={(e) => handleFileChange('myRentalEvictionReport', e)}
-                    onRemove={() => handleFileRemove('myRentalEvictionReport')}
+                    files={data.myRentalEvictionReport}
+                    onFilesUpdate={(files) => handleFilesUpdate('myRentalEvictionReport', files)}
                 />
             </div>
 
@@ -1081,7 +1035,7 @@ const DisclosuresForm = ({ data, setData }) => {
     const isFormValid = data.agreement && data.signature && data.date;
 
     return (
-        <div className="form-section" id="disclosures-section" data-pdf-section="disclosures-section">
+        <div className="form-section" id="disclosures-section">
             <h2 className="form-section-title">Disclosures and Authorizations</h2>
             <p>Please carefully read the following statements and provide your final authorization to process this application.</p>
             <div className="disclosure-text">
@@ -1119,6 +1073,25 @@ const DisclosuresForm = ({ data, setData }) => {
 };
 
 
+// Fix: Defined the `useAutoSave` custom hook. This hook automatically saves
+// form data to localStorage, persisting user progress and fixing the "Cannot find name" error.
+const useAutoSave = (data, key) => {
+  useEffect(() => {
+    if (!key) return;
+    
+    const timeoutId = setTimeout(() => {
+      try {
+        localStorage.setItem(key, JSON.stringify(data));
+      } catch (error) {
+        console.error('Failed to auto-save form data:', error);
+      }
+    }, 500); // Debounce to prevent excessive writes
+
+    return () => clearTimeout(timeoutId);
+  }, [data, key]);
+};
+
+
 // --- MAIN APPLICATION FORM COMPONENT ---
 export const ApplicationForm = ({ initialReferenceId = null }) => {
     const [activeTab, setActiveTab] = useState(0);
@@ -1135,7 +1108,7 @@ export const ApplicationForm = ({ initialReferenceId = null }) => {
     const referenceId = formData?.personalInfo?.referenceId || 'rental-app-autosave';
     useAutoSave(formData, referenceId);
     
-    const tabRefs = useRef([]);
+    const tabRefs = useRef<(HTMLDivElement | null)[]>([]);
 
     const handleReferenceIdChange = (id: string) => {
         if (!id) return;
@@ -1194,6 +1167,7 @@ export const ApplicationForm = ({ initialReferenceId = null }) => {
             [FORM_KEYS.criminalHistory]: TABS[7],
             [FORM_KEYS.evictionHistory]: TABS[8],
             [FORM_KEYS.disclosures]: TABS[9],
+            [FORM_KEYS.screeningReport]: TABS[10],
         };
 
         requiredSections.forEach(sectionKey => {
@@ -1239,6 +1213,7 @@ export const ApplicationForm = ({ initialReferenceId = null }) => {
             case 7: return <CriminalHistoryForm data={formData.criminalHistory} setData={setFormData} />;
             case 8: return <EvictionHistoryForm data={formData.evictionHistory} setData={setFormData} />;
             case 9: return <DisclosuresForm data={formData.disclosures} setData={setFormData} />;
+            case 10: return <ScreeningReport formData={formData} setFormData={setFormData} />;
             default: return null;
         }
     };
@@ -1297,8 +1272,8 @@ export const ApplicationForm = ({ initialReferenceId = null }) => {
                         activeTab={activeTab}
                         setActiveTab={setActiveTab}
                         totalTabs={TABS.length}
-                        activeSectionId={FORM_SECTIONS[activeTab]?.id}
-                        sectionIds={FORM_SECTIONS.map(s => s.id)}
+                        formData={formData}
+                        propertyName={landlordConfig.propertyName}
                         isSubmittable={completionStatus.isSubmittable}
                         incompleteSections={completionStatus.incompleteSectionsText}
                     />

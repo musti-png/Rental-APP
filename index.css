@@ -417,7 +417,7 @@ h1, h2, h3 {
   gap: 0.5rem;
 }
 
-.btn:disabled {
+.btn:disabled, .btn.btn-disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
@@ -438,7 +438,7 @@ h1, h2, h3 {
   align-self: flex-start;
 }
 
-.btn-secondary:hover:not(:disabled) {
+.btn-secondary:hover:not(:disabled):not(.btn-disabled) {
   background-color: var(--primary-color);
   color: white;
 }
@@ -626,27 +626,43 @@ h1, h2, h3 {
   page-break-inside: avoid;
 }
 
-.file-upload-field {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  background-color: var(--surface-color);
+.document-upload-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
-.file-upload-label {
-  font-weight: 500;
-  flex: 1;
-  padding-right: 1rem;
-  color: var(--text-color);
-  font-size: 0.9rem;
+.document-upload-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.file-upload-actions {
+.document-upload-label {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--text-color);
+}
+
+.upload-progress-indicator {
+    font-size: 0.85rem;
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.document-upload-actions {
+    align-self: flex-start;
+}
+
+.document-upload-error {
+    text-align: left;
+    margin-top: -0.25rem;
+}
+
+.file-list-container {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .file-chip {
@@ -1434,4 +1450,342 @@ h1, h2, h3 {
 
 .share-link-container .btn-primary {
   flex-shrink: 0;
+}
+
+/* Income Verification Tool Styles */
+.income-verification-container {
+  background: var(--surface-color);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(23, 43, 77, 0.1), 0 1px 2px rgba(23, 43, 77, 0.08);
+  padding: 2rem;
+}
+
+.income-verification-title {
+    text-align: center;
+    color: var(--primary-color);
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.upload-section {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  background-color: #fbfcfd;
+}
+
+.upload-section h3 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+}
+
+.id-upload-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.upload-section .file-list-container {
+  margin-top: 1rem;
+}
+
+.analysis-section {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.analysis-result-box {
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+  text-align: left;
+  white-space: pre-wrap;
+  line-height: 1.7;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  min-height: 100px;
+  color: var(--text-color);
+}
+
+.analysis-result-box h4 {
+    margin-top: 0;
+    color: var(--primary-color);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Screening Report Styles */
+.screening-report-results {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 2rem;
+  margin-top: 2rem;
+  align-items: start;
+}
+
+.score-meter-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  text-align: center;
+}
+
+.score-meter-score {
+  font-size: 3rem;
+  font-weight: bold;
+  color: var(--primary-color);
+  position: absolute;
+}
+
+.score-meter-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--secondary-color);
+  margin-top: 0.5rem;
+  position: absolute;
+  top: 55%;
+}
+
+.score-meter-circle {
+  width: 180px;
+  height: 180px;
+  transform: rotate(-90deg);
+}
+
+.score-meter-circle-bg {
+  fill: none;
+  stroke: var(--background-color);
+  stroke-width: 3.8;
+}
+
+.score-meter-circle-fg {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.6s ease-in-out;
+}
+
+
+.report-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.report-subsection {
+  background-color: #fbfcfd;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 1rem 1.5rem;
+}
+
+.report-subsection h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--primary-color);
+  font-size: 1.2rem;
+}
+
+.report-subsection h4 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  color: var(--text-color);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.report-subsection p {
+  margin: 0;
+  line-height: 1.7;
+}
+
+.report-subsection ul {
+  padding-left: 1.25rem;
+  margin: 0;
+  line-height: 1.7;
+}
+
+.sub-analysis {
+  margin-top: 1.5rem;
+}
+
+.risk-level {
+  padding: 0.25rem 0.75rem;
+  border-radius: 16px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+}
+.risk-level.low { background-color: var(--accent-color); }
+.risk-level.medium { background-color: #FFAB00; color: var(--text-color); }
+.risk-level.high { background-color: var(--danger-color); }
+
+.factors-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.red-flag-item {
+  color: var(--danger-color);
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .screening-report-results {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .score-meter-container {
+      margin-bottom: 1rem;
+  }
+}
+
+/* Print Layout Styles */
+.print-layout {
+    font-family: Arial, sans-serif;
+    color: #333;
+    line-height: 1.5;
+    padding: 2rem;
+}
+.print-layout h1 {
+    font-size: 24pt;
+    text-align: center;
+    border-bottom: 2px solid #333;
+    padding-bottom: 8pt;
+    margin-bottom: 24pt;
+    color: #000;
+}
+.print-layout h2 {
+    font-size: 16pt;
+    color: var(--primary-color);
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 6pt;
+    margin-top: 24pt;
+    margin-bottom: 12pt;
+    page-break-before: auto;
+    page-break-after: avoid;
+}
+.print-layout section {
+    margin-bottom: 20pt;
+    page-break-inside: avoid;
+}
+.print-layout p {
+    font-size: 11pt;
+    margin: 0 0 8pt 0;
+}
+.print-layout strong {
+    font-weight: bold;
+    color: #000;
+}
+.print-layout .print-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem 2rem;
+    margin-top: 1rem;
+    align-items: start;
+}
+.print-layout .print-subsection {
+    border: 1px solid #eee;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-top: 1rem;
+    background-color: #fdfdfd;
+    page-break-inside: avoid;
+}
+.print-layout .print-subsection h3 {
+    font-size: 12pt;
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    padding: 0;
+    border: none;
+    color: #333;
+}
+.print-layout .print-image-container {
+    margin-bottom: 1rem;
+    page-break-inside: avoid;
+}
+.print-layout .print-image {
+    max-width: 200px;
+    max-height: 200px;
+    border: 1px solid #ccc;
+    margin-top: 5px;
+    border-radius: 4px;
+    object-fit: contain;
+}
+.print-layout ul {
+    list-style-type: disc;
+    padding-left: 20px;
+    margin-top: 0.5rem;
+}
+.print-layout li {
+    margin-bottom: 4pt;
+    font-size: 10pt;
+}
+.print-layout .print-file-list {
+  margin-top: 1rem;
+}
+.print-layout .print-field {
+  display: flex;
+  flex-wrap: wrap;
+}
+.print-layout .print-label {
+  min-width: 150px;
+  flex-shrink: 0;
+}
+.print-layout .print-document-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+.print-layout .print-document-item {
+    border: 1px solid #eee;
+    padding: 0.5rem;
+    border-radius: 4px;
+    text-align: center;
+    page-break-inside: avoid;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.print-layout .print-document-name {
+    font-size: 9pt;
+    font-weight: bold;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.print-layout .print-document-image {
+    width: 100%;
+    height: auto;
+    border: 1px solid #ccc;
+    object-fit: contain;
+    max-height: 150px;
+}
+.print-layout .file-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+    border: 1px dashed #ccc;
+    border-radius: 4px;
+    min-height: 100px;
+    padding: 1rem;
+}
+.print-layout .file-placeholder span {
+    font-size: 2rem;
+}
+.print-layout .file-placeholder p {
+    margin: 0.5rem 0 0 0;
+    font-size: 9pt;
+    color: #666;
 }

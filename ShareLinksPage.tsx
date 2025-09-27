@@ -5,7 +5,16 @@
 import React, { useState, useMemo } from 'react';
 import { landlordConfigs } from './constants';
 
-const ShareLinkCard = ({ refId, config }) => {
+// Fix: Add an explicit props interface for the component for better type safety.
+interface ShareLinkCardProps {
+    refId: string;
+    config: {
+        propertyName: string;
+    };
+}
+
+// Fix: Define the component as a React.FC to correctly handle React-specific props like `key`.
+const ShareLinkCard: React.FC<ShareLinkCardProps> = ({ refId, config }) => {
     const [referralCode, setReferralCode] = useState('');
     const [isCopied, setIsCopied] = useState(false);
 

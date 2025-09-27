@@ -15,6 +15,7 @@ export const TABS = [
   'Criminal History',
   'Eviction History',
   'Disclosures and Authorizations',
+  'Screening Report',
 ];
 
 export const FORM_SECTIONS = [
@@ -27,7 +28,8 @@ export const FORM_SECTIONS = [
     { id: 'credit-history-section', title: 'Credit-History' },
     { id: 'criminal-history-section', title: 'Criminal-History' },
     { id: 'eviction-history-section', title: 'Eviction-History' },
-    { id: 'disclosures-section', title: 'Disclosures-And-Authorizations' }
+    { id: 'disclosures-section', title: 'Disclosures-And-Authorizations' },
+    { id: 'screening-report-section', title: 'Screening-Report' },
 ];
 
 export const FORM_KEYS = {
@@ -41,6 +43,7 @@ export const FORM_KEYS = {
     criminalHistory: 'criminalHistory',
     evictionHistory: 'evictionHistory',
     disclosures: 'disclosures',
+    screeningReport: 'screeningReport',
 };
 
 // --- MOCK LANDLORD CONFIGURATION ---
@@ -54,6 +57,7 @@ export const landlordConfigs = {
       FORM_KEYS.creditHistory,
       FORM_KEYS.criminalHistory,
       FORM_KEYS.disclosures,
+      FORM_KEYS.screeningReport,
     ],
   },
   'UNIT-A4': {
@@ -62,6 +66,7 @@ export const landlordConfigs = {
       FORM_KEYS.personalInfo,
       FORM_KEYS.employmentVerification,
       FORM_KEYS.disclosures,
+      FORM_KEYS.screeningReport,
     ],
   },
   'CONDO-7B': {
@@ -75,6 +80,7 @@ export const landlordConfigs = {
       FORM_KEYS.criminalHistory,
       FORM_KEYS.evictionHistory,
       FORM_KEYS.disclosures,
+      FORM_KEYS.screeningReport,
     ],
   },
 };
@@ -85,21 +91,24 @@ export const defaultConfig = {
 
 // --- VALIDATION RULES ---
 const isNonEmptyString = (val) => val && typeof val === 'string' && val.trim() !== '';
-const isFileUploaded = (file) => file && isNonEmptyString(file.name) && isNonEmptyString(file.data);
+const isFileUploaded = (files) => Array.isArray(files) && files.length > 0;
 
 export const VALIDATION_RULES = {
   [FORM_KEYS.personalInfo]: (data) =>
     isNonEmptyString(data.fullName) &&
     isNonEmptyString(data.phone) &&
     isNonEmptyString(data.email) &&
-    /\S+@\S+\.\S+/.test(data.email),
+    /\S+@\S+\.\S+/.test(data.email) &&
+    isFileUploaded(data.idFront) &&
+    isFileUploaded(data.idBack),
   [FORM_KEYS.rentalHistory]: (data) =>
     data.length > 0 && data.every(item => isNonEmptyString(item.address) && isNonEmptyString(item.landlordName)),
   [FORM_KEYS.employmentVerification]: (data) =>
     isNonEmptyString(data.employmentStatus) &&
     isNonEmptyString(data.grossMonthlyIncome) &&
     parseFloat(data.grossMonthlyIncome) > 0 &&
-    isNonEmptyString(data.signature),
+    isNonEmptyString(data.signature) &&
+    (isFileUploaded(data.incomeDocuments?.paySlips) && (isFileUploaded(data.incomeDocuments?.bankStatements6Month) || isFileUploaded(data.incomeDocuments?.bankStatementsLastYear))),
   [FORM_KEYS.householdOccupants]: () => true, // Optional by default
   [FORM_KEYS.references]: (data) =>
     data.length > 0 && data.every(item => isNonEmptyString(item.name) && isNonEmptyString(item.phone)),
@@ -108,68 +117,118 @@ export const VALIDATION_RULES = {
     isFileUploaded(data.transunionReport) ||
     isFileUploaded(data.experianReport) ||
     isFileUploaded(data.equifaxReport),
-  [FORM_KEYS.criminalHistory]: (data) => data.fcraConsent,
-  [FORM_KEYS.evictionHistory]: (data) => data.fcraConsent,
+  [FORM_KEYS.criminalHistory]: (data) => data.fcraConsent && (
+    isFileUploaded(data.transunionReport) ||
+    isFileUploaded(data.experianReport) ||
+    isFileUploaded(data.availReport) ||
+    isFileUploaded(data.myRentalReport)
+  ),
+  [FORM_KEYS.evictionHistory]: (data) => data.fcraConsent && (
+    isFileUploaded(data.transunionEvictionReport) ||
+    isFileUploaded(data.experianEvictionReport) ||
+    isFileUploaded(data.availEvictionReport) ||
+    isFileUploaded(data.myRentalEvictionReport)
+  ),
   [FORM_KEYS.disclosures]: (data) =>
     data.agreement && isNonEmptyString(data.signature) && isNonEmptyString(data.date),
+  [FORM_KEYS.screeningReport]: (data) => data && data.generated === true,
 };
 
-// --- INITIAL FORM STATE ---
+// --- INITIAL FORM STATE (PRE-FILLED FOR DEMO) ---
+// Placeholder for base64 encoded images (a 1x1 grey pixel GIF)
+const placeholderImageBase64 = 'R0lGODlhAQABAIAAAMLCwgAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==';
+// Placeholder for base64 encoded PDF documents ("fake pdf")
+const placeholderPdfBase64 = 'data:application/pdf;base64,ZmFrZSBwZGY=';
+
 export const blankFormData = {
   personalInfo: {
-    referenceId: '',
-    fullName: '',
-    dob: '',
-    ssn: '',
-    license: '',
-    phone: '',
-    email: '',
-    photo: null,
+    referenceId: 'PROPERTY-123',
+    fullName: 'John Appleseed',
+    dob: '1990-05-15',
+    ssn: '999-99-9999',
+    license: 'F12345678',
+    phone: '555-123-4567',
+    email: 'john.appleseed@example.com',
+    photo: `data:image/gif;base64,${placeholderImageBase64}`,
+    idFront: [{ name: 'ID_Front.jpg', data: `data:image/jpeg;base64,${placeholderImageBase64}`, mimeType: 'image/jpeg' }],
+    idBack: [{ name: 'ID_Back.jpg', data: `data:image/jpeg;base64,${placeholderImageBase64}`, mimeType: 'image/jpeg' }],
   },
   rentalHistory: [
-    { address: '', type: 'Rental', moveIn: '', moveOut: '', landlordName: '', landlordContact: '' },
+    { address: '789 Maple St, Sometown, USA', type: 'Rental', moveIn: '2022-06-01', moveOut: '2024-05-31', landlordName: 'Sarah Connor', landlordContact: '555-987-6543' },
   ],
   employmentVerification: {
-    employmentStatus: '',
-    employerName: '',
-    jobTitle: '',
-    grossMonthlyIncome: '',
-    otherIncomeSources: [],
-    signature: '',
+    employmentStatus: 'Full-Time',
+    employerName: 'Acme Corporation',
+    jobTitle: 'Senior Software Engineer',
+    grossMonthlyIncome: '8000',
+    otherIncomeSources: [{ source: 'Freelance Web Development', amount: '1000' }],
+    signature: 'John Appleseed',
     incomeDocuments: {
-      payStubs: null, offerLetter: null, taxReturn: null, bankStatements: null,
+      paySlips: [{ name: 'payslip_1.pdf', data: placeholderPdfBase64, mimeType: 'application/pdf' }, { name: 'payslip_2.pdf', data: placeholderPdfBase64, mimeType: 'application/pdf' }],
+      bankStatements6Month: [{ name: 'bank_statements_6mo.pdf', data: placeholderPdfBase64, mimeType: 'application/pdf' }],
+      bankStatementsLastYear: [],
+      creditCardStatements3Month: [{ name: 'cc_statements_3mo.pdf', data: placeholderPdfBase64, mimeType: 'application/pdf' }],
+      creditCardStatements6Month: [],
     }
   },
-  householdOccupants: [],
+  householdOccupants: [
+    {
+      firstName: 'Jane',
+      lastName: 'Appleseed',
+      relationship: 'Spouse/Partner',
+      dob: '1992-08-20',
+      photo: `data:image/gif;base64,${placeholderImageBase64}`,
+      idFront: [{ name: 'Jane_ID_Front.jpg', data: `data:image/jpeg;base64,${placeholderImageBase64}`, mimeType: 'image/jpeg' }],
+      idBack: [{ name: 'Jane_ID_Back.jpg', data: `data:image/jpeg;base64,${placeholderImageBase64}`, mimeType: 'image/jpeg' }],
+    }
+  ],
   references: [
-    { name: '', relationship: '', phone: '', email: '' },
+    { name: 'Mike Ross', relationship: 'Colleague', phone: '555-111-2222', email: 'mike.ross@example.com' },
+    { name: 'Rachel Zane', relationship: 'Friend', phone: '555-333-4444', email: 'rachel.zane@example.com' },
   ],
   vehiclesAndPets: {
-    hasVehicle: 'No',
-    vehicles: [],
-    hasPets: 'No',
-    pets: [],
+    hasVehicle: 'Yes',
+    vehicles: [{ make: 'Tesla', model: 'Model 3', color: 'Blue' }],
+    hasPets: 'Yes',
+    pets: [{ type: 'Dog', breed: 'Golden Retriever', name: 'Buddy', age: '5', weight: '75' }],
   },
   creditHistory: {
-    transunionReport: null,
-    experianReport: null,
-    equifaxReport: null
+    transunionReport: [{ name: 'transunion_report.pdf', data: placeholderPdfBase64, mimeType: 'application/pdf' }],
+    experianReport: [{ name: 'experian_report.pdf', data: placeholderPdfBase64, mimeType: 'application/pdf' }],
+    equifaxReport: []
   },
   criminalHistory: {
-    transunionReport: null,
-    experianReport: null,
-    availReport: null,
-    myRentalReport: null,
-    fcraConsent: false,
+    transunionReport: [{ name: 'criminal_check_tu.pdf', data: placeholderPdfBase64, mimeType: 'application/pdf' }],
+    experianReport: [],
+    availReport: [],
+    myRentalReport: [],
+    fcraConsent: true,
   },
   evictionHistory: {
-    transunionEvictionReport: null,
-    experianEvictionReport: null,
-    availEvictionReport: null,
-    myRentalEvictionReport: null,
-    fcraConsent: false,
+    transunionEvictionReport: [{ name: 'eviction_check_tu.pdf', data: placeholderPdfBase64, mimeType: 'application/pdf' }],
+    experianEvictionReport: [],
+    availEvictionReport: [],
+    myRentalEvictionReport: [],
+    fcraConsent: true,
   },
-  disclosures: { agreement: false, signature: '', date: '' },
+  disclosures: { agreement: true, signature: 'John Appleseed', date: '2024-10-26' },
+  screeningReport: {
+      generated: true,
+      screeningScore: 780,
+      riskLevel: "Low",
+      summary: "The applicant demonstrates a strong financial profile with consistent income well above the typical rent-to-income ratio requirements. Payment history appears reliable with no major red flags observed in the provided documents.",
+      financialAnalysis: {
+        cashFlow: "Consistent payroll deposits from 'Acme Corporation' noted twice a month. Average monthly deposits are approximately $9,000. Spending patterns are regular with no signs of financial distress.",
+        rentPaymentHistory: "Recurring monthly payments of $2,200 to 'Sometown Properties' are observed, paid consistently on the 1st of each month.",
+        utilityPaymentHistory: "Regular payments to 'Anytown Power & Light' and 'Sometown Internet' are noted, with no evidence of late fees.",
+        debtCommitment: "The applicant shows a strong commitment to meeting financial obligations. Credit card balances are paid down regularly, and all recurring payments are timely."
+      },
+      scoreFactors: {
+        positive: ["Consistent high income", "On-time rent payment history", "Stable employment"],
+        negative: ["Moderate credit card utilization"]
+      },
+      redFlags: []
+  },
 };
 
 

@@ -56,7 +56,8 @@ export const MoveInChecklist = () => {
     const newPhotos = [];
     let filesProcessed = 0;
 
-    files.forEach(file => {
+    // Fix: Explicitly type `file` as `File` to resolve property access errors.
+    files.forEach((file: File) => {
       const reader = new FileReader();
       reader.onload = (event) => {
         newPhotos.push({
